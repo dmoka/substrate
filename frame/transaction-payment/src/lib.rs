@@ -600,7 +600,7 @@ where
 			let unadjusted_weight_fee = Self::weight_to_fee(weight);
 			log::info!("unadjusted_weight_fee: {:?}", unadjusted_weight_fee);
 			let multiplier = Self::next_fee_multiplier();
-			log::info!("multiplier: {:?}", multiplier);
+			log::info!("multiplier : {:?}", multiplier);
 
 			// final adjusted weight fee.
 			let adjusted_weight_fee = multiplier.saturating_mul_int(unadjusted_weight_fee);

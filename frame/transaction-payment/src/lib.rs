@@ -62,13 +62,9 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-use frame_support::{
-	dispatch::{
-		DispatchClass, DispatchInfo, DispatchResult, GetDispatchInfo, Pays, PostDispatchInfo,
-	},
-	traits::{EstimateCallFee, Get},
-	weights::{Weight, WeightToFee},
-};
+use frame_support::{dispatch::{
+	DispatchClass, DispatchInfo, DispatchResult, GetDispatchInfo, Pays, PostDispatchInfo,
+}, log, traits::{EstimateCallFee, Get}, weights::{Weight, WeightToFee}};
 
 #[cfg(test)]
 mod mock;
@@ -198,8 +194,11 @@ where
 		let min_multiplier = M::get();
 		let max_multiplier = X::get();
 		let previous = previous.max(min_multiplier);
+		log::info!("min_multiplier {:?}, max_multiplier: {:?}, previous: {:?}", min_multiplier, max_multiplier, previous);
 
 		let weights = T::BlockWeights::get();
+		log::info!("Weights: {:?}", weights);
+
 		// the computed ratio is only among the normal class.
 		let normal_max_weight =
 			weights.get(DispatchClass::Normal).max_total.unwrap_or(weights.max_block);
@@ -390,6 +389,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_: T::BlockNumber) {
 			<NextFeeMultiplier<T>>::mutate(|fm| {
+				log::info!("OnFinalize precious multiplier: {:?}", fm);
 				*fm = T::FeeMultiplierUpdate::convert(*fm);
 			});
 		}
@@ -594,10 +594,17 @@ where
 	) -> FeeDetails<BalanceOf<T>> {
 		if pays_fee == Pays::Yes {
 			// the adjustable part of the fee.
+			log::info!("COMPUTE FEE RAW");
+			log::info!("weight: {:?}", weight);
+
 			let unadjusted_weight_fee = Self::weight_to_fee(weight);
+			log::info!("unadjusted_weight_fee: {:?}", unadjusted_weight_fee);
 			let multiplier = Self::next_fee_multiplier();
+			log::info!("multiplier: {:?}", multiplier);
+
 			// final adjusted weight fee.
 			let adjusted_weight_fee = multiplier.saturating_mul_int(unadjusted_weight_fee);
+			log::info!("adjusted_weight_fee: {:?}", adjusted_weight_fee);
 
 			// length fee. this is adjusted via `LengthToFee`.
 			let len_fee = Self::length_to_fee(len);
